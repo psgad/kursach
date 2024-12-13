@@ -1,4 +1,4 @@
-name: test 1 on kursach
+name: Deploy Application on Server
 
 on:
   push:
@@ -9,21 +9,28 @@ on:
       - master
 
 jobs:
-  checkstyle_project:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Git clone repo
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set version Python
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.13.0'
+          python-version: '3.8.10'
 
       - name: Install dependencies
         run: |
+          python -m venv env
           source env/bin/activate
-        
-      - name: Run server
+          pip install -r requirements.txt
+
+      - name: Run application
         run: |
-          python main.py
+          nohup python main.py > app.log 2>&1 &
+
+      - name: Check application logs
+        run: |
+          cat app.log
