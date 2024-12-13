@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block page_title %}Электронный журнал MPT.net{% endblock %}
+
+{% block content %}
+<div class="news-container">
+	<div class="news-slider" id="news-slider">
+		<div class="news-item">
+			<h2>Новость 1</h2>
+			<p>Текст новости 1...</p>
+		</div>
+		<div class="news-item">
+			<h2>Новость 2</h2>
+			<p>Текст новости 2...</p>
+		</div>
+		<div class="news-item">
+			<h2>Новость 3</h2>
+			<p>Текст новости 3...</p>
+		</div>
+		<div class="news-item">
+			<h2>Новость 4</h2>
+			<p>Текст новости 4...</p>
+		</div>
+	</div>
+</div>
+
+{% if current_user.is_authenticated %}
+{% if user['role'] == 'Студент' %}
+<div class="schedule-container">
+	<h2>Расписание на сегодня</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Номер пары</th>
+				<th>Время</th>
+				<th>Предмет</th>
+				<th>Преподаватель</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% if lessons %}
+			{% for i in lessons %}
+			{% if i != 'weekday' %}
+			<tr>
+				<td>{{ lessons[i]['lesson_number']}}</td>
+				<td>{{ lessons[i]['lesson_time']}}</td>
+				<td>{{ lessons[i]['lesson_title']}}</td>
+				<td>{{ lessons[i]['lesson_teacher']}}</td>
+			</tr>
+			{% endif %}
+			{% endfor %}
+			{% else %}
+			<tr>
+				<td>0</td>
+				<td>0:00 - 23:59</td>
+				<td>Выходной</td>
+				<td>День самоуправления</td>
+			</tr>
+			{% endif %}
+		</tbody>
+	</table>
+</div>
+{% elif user['role'] == 'Родитель' %}
+{% if children_lessons %}
+{% for j in count %}
+<div class="schedule-container">
+	<h2>Расписание у студента {{ childrens[j] }} на сегодня</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Номер пары</th>
+				<th>Время</th>
+				<th>Предмет</th>
+				<th>Преподаватель</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% if children_lessons[j][childrens[j]]%}
+			{% for i in children_lessons[j][childrens[j]] %}
+			{% if i != 'weekday' %}
+			<tr>
+				<td>{{ children_lessons[j][childrens[j]][i]['lesson_number']}}</td>
+				<td>{{ children_lessons[j][childrens[j]][i]['lesson_time']}}</td>
+				<td>{{ children_lessons[j][childrens[j]][i]['lesson_title']}}</td>
+				<td>{{ children_lessons[j][childrens[j]][i]['lesson_teacher']}}</td>
+			</tr>
+			{% endif %}
+			{% endfor %}
+			{% else %}
+			<tr>
+				<td>0</td>
+				<td>0:00 - 23:59</td>
+				<td>Выходной</td>
+				<td>День самоуправления</td>
+			</tr>
+			{% endif %}
+		</tbody>
+	</table>
+</div>
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

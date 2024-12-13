@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Редактирование профиля{% endblock %}
+{% block page_title %}Редактирование профиля{% endblock %}
+{% block content %}
+
+<form class="profile-card" method="POST" enctype='multipart/form-data' action="/profile">
+    <div class="photo-section">
+        <img src="{{ user.photo }}" alt="Фото профиля" id='profile_preview_photo'>
+        <input type="file" id="photo" name="photo" accept="image/*" onchange="previewImage(event)">
+        <label for="photo">Обновить фото</label>
+    </div>
+    <div class="info-section">
+        <h2>{{ user.surname }} {{ user.firstname }} {{ user.lastname }}</h2>
+        <h3>Роль: {{ user.role }}</h3>
+        {% if user['role'] == 'Студент' %}
+        <h3>Группа: {{ user['user_group'] if user['user_group'] != '' else 'Не определене администратором'}}</h3>
+        {% endif %}
+
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" placeholder="Введите новый пароль">
+
+        <div class="buttons">
+            <button type="submit" class="save">Сохранить изменения</button>
+        </div>
+    </div>
+</form>
+
+{% endblock %}

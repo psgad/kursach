@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание занятий</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .group-select-container {
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid transparent;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border: 2px solid #61dafb;
+        }
+
+        .group-list {
+            position: absolute;
+            background: #1e1e1e;
+            border-radius: 5px;
+            z-index: 999;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .group-list div {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .group-list div:hover {
+            background: #333;
+        }
+
+        .tables-container {
+            margin-top: 20px;
+        }
+
+        .day-table {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #61dafb;
+        }
+
+        .loading {
+            display: inline-block;
+            padding: 20px;
+            background: #000;
+            color: white;
+            text-align: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <div class="container">
+        <h1>Расписание занятий</h1>
+        <div class="group-select-container">
+            <input type="text" id="group-search" placeholder="Выберите группу..." oninput="filterGroups()">
+            <div id="group-list" class="group-list"></div>
+        </div>
+
+        <div class="tables-container" id="tables-container">
+            <!-- Здесь будут динамически добавляться таблицы -->
+        </div>
+    </div>
+
+    <div id="loading" class="loading">Загрузка...</div>
+
+    <script>
+        // Пример фильтрации групп
+        const groups = [{% for group in groups %}'{{ group }}', {% endfor %}];
+
+        function filterGroups() {
+            const input = document.getElementById('group-search').value.toLowerCase();
+            const list = document.getElementById('group-list');
+            list.innerHTML = '';
+
+            groups.filter(group => group.toLowerCase().includes(input)).forEach(group => {
+                const div = document.createElement('div');
+                div.textContent = group;
+                div.onclick = () => selectGroup(group);
+                list.appendChild(div);
+            });
+        }
+
+        function selectGroup(group) {
+            document.getElementById('group-search').value = group;
+            document.getElementById('group-list').innerHTML = '';
+
+            // Загружаем расписание для выбранной группы
+            fetch(`/student/lessons?data=${group}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Сеть не в порядке');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    addSchedule(data);
+                })
+                .catch(error => {
+                    console.error("Ошибка", error);
+                });
+        }
+        function timeOfIndex(index) {
+            if (index == '1')
+                return '8:30 - 10:00'
+            else if (index == '2')
+                return '10:10 - 11:40'
+            else if (index == '3')
+                return '12:00 - 13:30'
+            else if (index == '4')
+                return '13:50 - 15:20'
+            else if (index == '5')
+                return '15:30 - 17:00'
+            else if (index == '6')
+                return '17:10 - 18:40'
+            else return ''
+        }
+
+
+        function addSchedule(lessons) {
+            const tablesContainer = document.getElementById('tables-container');
+            tablesContainer.innerHTML = ''; // Очищаем текущие таблицы
+
+            if (lessons) {
+                console.log(lessons)
+                for (let day_id in lessons) {
+                    const day = lessons[day_id];
+                    const dayTable = document.createElement('div');
+                    dayTable.classList.add('day-table');
+
+                    const title = document.createElement('h2');
+                    title.textContent = day['weekday'];
+                    dayTable.appendChild(title);
+
+                    const table = document.createElement('table');
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = '<tr><th>Номер пары</th><th>Время провередения</th><th>Предмет</th><th>Преподаватель</th></tr>';
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+                    for (const key in day) {
+                        if (key == "weekday") continue;
+                        console.log(key);
+                        const value = day[key];
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${value['lesson_number']}</td><td>${timeOfIndex(value['lesson_number'])}</td><td>${value['lesson_title']}</td><td>${value['lesson_teacher']}</td>`;
+                        tbody.appendChild(row);
+                    };
+                    table.appendChild(tbody);
+                    dayTable.appendChild(table);
+                    tablesContainer.appendChild(dayTable);
+                }
+            }
+        }
+        window.addEventListener('load', () => {
+            document.getElementById('loading').style.display = 'none';
+        });
+    </script>
+</body>
+
+</html>

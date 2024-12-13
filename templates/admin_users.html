@@ -1,0 +1,523 @@
+{% extends 'base.html' %}
+
+{% block title %}Панель администратора{% endblock %}
+{% block page_title %}Управление пользователями{% endblock %}
+{% block content %}
+<style>
+    /* Стили для основного контента */
+    .content {
+        overflow: visible;
+        padding-top: 0px;
+    }
+
+    body {
+        user-select: none;
+    }
+
+    /* Стили для контейнеров таблицы и формы */
+    .table-container {
+        height: 685px;
+        overflow-x: auto;
+        overflow-y: auto;
+        /* Максимальная высота таблицы для вертикальной прокрутки */
+        margin: 20px auto;
+        /* Центрирование таблицы */
+        display: flex;
+        justify-content: space-between;
+        background-color: #242424;
+        /* Темнее основной сайт */
+        border: 1px solid #444;
+        /* Рамка вокруг контейнера таблицы */
+        border-radius: 10px;
+        /* Закругление углов */
+        padding: 10px;
+        /* Отступы внутри контейнера */
+        padding-bottom: 0px;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .dark-block {
+        background-color: #2e2e2e;
+        padding: 20px;
+        border-radius: 10px;
+        /* Закругление углов */
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: fit-content;
+        border-collapse: collapse;
+        background-color: #1e1e1e;
+        display: block;
+    }
+
+    th,
+    td {
+        border: 1px solid #444;
+        /* Рамка ячеек */
+        padding: 8px;
+        text-align: center;
+        text-wrap: nowrap;
+        color: #ffffff;
+    }
+
+    th {
+        background-color: #333;
+        color: #ffffff;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        text-wrap: nowrap;
+    }
+
+    .highlight {
+        background-color: #444;
+    }
+
+    /* Стили для формы */
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 20px auto;
+        /* Центрирование формы */
+        background-color: #242424;
+        /* Темный фон для формы */
+        padding: 20px;
+        border-radius: 10px;
+        /* Закругление углов */
+        border: 1px solid #444;
+        /* Рамка вокруг формы */
+    }
+
+    /* Остальные стили остаются без изменений */
+
+    button {
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        color: #ffffff;
+        border-radius: 5px;
+    }
+
+    button.save {
+        background-color: #0055cc;
+        /* Темно-синий */
+        color: white;
+        /* Цвет текста */
+        border: none;
+        /* Убираем рамку */
+        border-radius: 5px;
+        /* Закругление углов */
+        padding: 12px 20px;
+        /* Увеличение отступов внутри кнопки */
+        font-size: 1.1em;
+        /* Увеличение размера шрифта */
+        cursor: pointer;
+        /* Поменять курсор на указатель при наведении */
+        transition: background-color 0.3s;
+        /* Плавная смена цвета при наведении */
+    }
+
+    button.save:hover {
+        background-color: #004bb5;
+        /* Цвет фона кнопки при наведении */
+    }
+
+    button.edit {
+        background-color: #0d430d;
+        /* Темно-зелёный */
+    }
+
+    button.delete {
+        background-color: #591515;
+        /* Темно-красный */
+    }
+
+    button:hover {
+        opacity: 0.8;
+    }
+
+    /* Пагинация */
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Центрирует кнопки горизонтально */
+        margin-bottom: 20px;
+    }
+
+    .page-button {
+        background-color: #4CAF50;
+        /* Цвет фона кнопки */
+        color: white;
+        /* Цвет текста */
+        border: none;
+        /* Убираем рамку */
+        border-radius: 5px;
+        /* Закругление углов */
+        padding: 10px 20px;
+        /* Отступы внутри кнопки */
+        margin: 0 10px;
+        /* Отступы между кнопками */
+        cursor: pointer;
+        /* Поменять курсор на указатель при наведении */
+        transition: background-color 0.3s;
+        /* Плавная смена цвета */
+    }
+
+    .page-button:hover {
+        background-color: #45a049;
+        /* Цвет фона при наведении */
+    }
+
+    .page-info {
+        margin: 0 15px;
+        /* Отступы по горизонтали для текста страницы */
+        font-size: 1.2em;
+        /* Размер текста */
+        color: #fff;
+        /* Цвет текста */
+    }
+
+    /* Стили для форм и их элементов */
+    .form-group {
+        margin-bottom: 15px;
+        /* Отступы между группами полей */
+    }
+
+    label {
+        display: block;
+        /* Заголовок на новой строке */
+        margin-bottom: 5px;
+        /* Отступы снизу заголовка */
+        font-weight: bold;
+        /* Жирный шрифт для заголовков */
+        color: #ffffff;
+        /* Цвет текста для заголовков */
+    }
+
+    input[type="text"]:focus {
+        border-color: #4CAF50;
+        /* Цвет рамки при фокусе */
+        outline: none;
+        /* Убираем стандартный контур */
+    }
+
+    th,
+    td {
+        border: 1px solid #444;
+        /* Рамка ячеек */
+        padding: 12px;
+        /* Увеличиваем отступы внутри ячеек */
+        text-align: center;
+        text-wrap: nowrap;
+        color: #ffffff;
+    }
+
+    /* Добавляем отступы между ячейками */
+    table {
+        border-spacing: 0;
+        /* Убираем отступы между ячейками, если требуется */
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        margin: 20px auto;
+        /* Центрирование формы */
+        background-color: #242424;
+        /* Темный фон для формы */
+        padding: 20px;
+        border-radius: 10px;
+        /* Закругление углов */
+        border: 1px solid #444;
+        /* Рамка вокруг формы */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        /* Тень для глубины */
+    }
+
+    .form-container form {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+        /* Отступы между группами полей */
+        width: 100%;
+        /* Поля занимают всю ширину контейнера */
+    }
+
+    label {
+        display: block;
+        /* Заголовок на новой строке */
+        margin-bottom: 5px;
+        /* Отступы снизу заголовка */
+        font-weight: bold;
+        /* Жирный шрифт для заголовков */
+        color: #ffffff;
+        /* Цвет текста для заголовков */
+        font-size: 1em;
+        /* Размер шрифта заголовка */
+    }
+
+    /* Стили для полей ввода */
+    input[type="text"],
+    input[type='password'] {
+        padding: 10px;
+        /* Внутренние отступы для полей */
+        border: 1px solid #555;
+        /* Рамка полей */
+        border-radius: 5px;
+        /* Закругление углов полей */
+        box-sizing: border-box;
+        /* Учитывать отступы и рамки в ширине и высоте */
+        background-color: #1e1e1e;
+        /* Фон полей */
+        color: #ffffff;
+        /* Цвет текста */
+        transition: border-color 0.3s, background-color 0.3s;
+        /* Плавный переход */
+        margin-right: 20px;
+    }
+
+    /* Эффекты фокуса и наведения для полей */
+    input[type="text"]:focus,
+    input[type='password']:focus {
+        border-color: #4CAF50;
+        /* Цвет рамки при фокусе */
+        background-color: #2a2a2a;
+        /* Цвет фона при фокусе */
+        outline: none;
+        /* Убираем стандартный контур */
+    }
+
+    input[type="text"]:hover,
+    input[type='password']:hover {
+        background-color: #2a2a2a;
+        /* Цвет фона при наведении */
+    }
+
+    /* Стили для кнопки сохранения */
+    button.save {
+        background-color: #4CAF50;
+        /* Цвет фона кнопки */
+        color: white;
+        /* Цвет текста на кнопке */
+        border: none;
+        /* Убираем рамку */
+        border-radius: 5px;
+        /* Закругление углов кнопки */
+        padding: 12px 20px;
+        /* Увеличенные отступы внутри кнопки */
+        cursor: pointer;
+        /* Поменять курсор на указатель при наведении */
+        transition: background-color 0.3s;
+        /* Плавная смена цвета при наведении */
+        font-size: 1em;
+        /* Размер шрифта кнопки */
+    }
+
+    button.save:hover {
+        background-color: #45a049;
+        /* Цвет фона кнопки при наведении */
+    }
+
+    .custom-select {
+        width: 100%;
+        /* Полная ширина */
+        padding: 10px;
+        /* Отступы */
+        background-color: #1e1e1e;
+        /* Темный фон */
+        color: #ffffff;
+        /* Цвет текста */
+        border: 1px solid #444;
+        /* Рамка */
+        border-radius: 4px;
+        /* Закругление углов */
+        appearance: none;
+        /* Убираем стандартные стрелки */
+        -webkit-appearance: none;
+        /* Убираем стандартные стрелки для Safari */
+        -moz-appearance: none;
+        /* Убираем стандартные стрелки для Firefox */
+        cursor: pointer;
+        /* Курсор указатель при наведении */
+        font-size: 16px;
+        /* Размер текста */
+        transition: border-color 0.3s;
+        /* Плавная смена цвета границы */
+    }
+
+    .custom-select:focus {
+        border-color: #4CAF50;
+        /* Цвет рамки при фокусе */
+        outline: none;
+        /* Убираем стандартный контур */
+    }
+
+    /* Дополнительные стили для стрелки */
+    .custom-select::after {
+        content: '';
+        position: absolute;
+        right: 15px;
+        /* Отступ справа */
+        top: 50%;
+        /* Центрировать */
+        transform: translateY(-50%);
+        /* Центрирование */
+        border: solid white;
+        /* Цвет стрелки */
+        border-width: 0 2px 2px 0;
+        /* Формирование стрелки */
+        display: inline-block;
+        padding: 5px;
+        pointer-events: none;
+        /* Убираем события для стрелки */
+    }
+
+    .form-container form * {
+        text-wrap: nowrap;
+        margin-right: 15px;
+    }
+</style>
+<div class="table-container">
+    <div class="dark-block">
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Фамилия</th>
+                    <th>Имя</th>
+                    <th>Отчество</th>
+                    <th>Почта</th>
+                    <th>Роль</th>
+                    <th>Группа</th>
+                    <th>Пароль</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr data-user-id="{{ user['id'] }}">
+                    <td>{{ user['id'] }}</td>
+                    <td>{{ user['surname'] }}</td>
+                    <td>{{ user['firstname'] }}</td>
+                    <td>{{ user['lastname'] }}</td>
+                    <td>{{ user['email'] }}</td>
+                    <td>{{ user['role'] }}</td>
+                    <td>{{ user['user_group'] if user['user_group'] != None else "" }}</td>
+                    <td>{{ user['password'] }}</td>
+                    <td>
+                        <button class="edit" onclick="editUser(this)">Изменить</button>
+                        <button class="delete" onclick="deleteUser(this)">Удалить</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <button class="page-button"
+            onclick="window.location.href='{{ url_for('admin_users', page=pagination.page-1) }}'">Предыдущая</button>
+        {% endif %}
+        <span class="page-info">Страница {{ pagination.page }} из {{ pagination.pages[-1] }}</span>
+        {% if pagination.has_next %}
+        <button class="page-button"
+            onclick="window.location.href='{{ url_for('admin_users', page=pagination.page+1) }}'">Следующая</button>
+        {% endif %}
+    </div>
+</div>
+
+<h2 style="text-align: center; color: #ffffff;">Форма для добавления/изменения пользователя</h2>
+<div class="form-container">
+    <form id="user-form" action="{{ url_for('admin_users') }}" method="post">
+        <input type="hidden" id="user-id" name="user_id">
+        <div class="form-group">
+            <label for="surname">Фамилия:</label>
+            <input type="text" id="surname" name="surname" required>
+        </div>
+        <div class="form-group">
+            <label for="firstname">Имя:</label>
+            <input type="text" id="firstname" name="firstname" required>
+        </div>
+        <div class="form-group">
+            <label for="lastname">Отчество:</label>
+            <input type="text" id="lastname" name="lastname" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Почта:</label>
+            <input type="text" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="user-role">Выберите роль:</label>
+            <select id="user-role" name="user_role" class="custom-select">
+                <option value="Админ">Админ</option>
+                <option value="Студент">Студент</option>
+                <option value="Преподаватель">Преподаватель</option>
+                <option value="Родитель">Родитель</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="gruop_user">Группа:</label>
+            <select id='group_user' name='group_user' class='custom-select'>
+                <option value=''></option>
+                {% for i in groups %}
+                <option value='{{ i }}'>{{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="save" type="submit">Сохранить</button>
+    </form>
+</div>
+
+<script>
+    // Функция для редактирования пользователя
+    function editUser(button) {
+        const row = button.parentNode.parentNode;
+
+        document.getElementById('user-id').value = row.children[0].textContent;
+        document.getElementById('surname').value = row.children[1].textContent;
+        document.getElementById('firstname').value = row.children[2].textContent;
+        document.getElementById('lastname').value = row.children[3].textContent;
+        document.getElementById('email').value = row.children[4].textContent;
+        document.getElementById('password').value = row.children[7].textContent;
+        selectElement('user-role', row.children[5].textContent);
+        selectElement('group_user', row.children[6].textContent);
+    }
+
+    // Функция для удаления пользователя
+    function deleteUser(button) {
+        const row = button.parentNode.parentNode;
+        const userId = row.getAttribute('data-user-id');
+
+        if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+            fetch(`/admin_users?id=${userId}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        row.remove();
+                    } else {
+                        alert('Ошибка при удалении пользователя');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при удалении пользователя:', error);
+                });
+        }
+    }
+</script>
+{% endblock %}

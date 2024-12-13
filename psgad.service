@@ -1,0 +1,14 @@
+[Unit]
+Description=kursach ept
+After=network.target
+
+[Service]
+User=psgadammn
+Group=www-data
+WorkingDirectory=/home/psgadammn/kursach
+Environment="PATH=/home/psgadammn/kursach/env/bin"
+ExecStart=/home/psgadammn/kursach/env/bin/gunicorn --workers 3 --bind unix:kursach.sock -m 007 wsgi:app
+
+[Install]
+WantedBy=multi-user.target
+

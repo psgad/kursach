@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Список предметов{% endblock %}
+{% block page_title %}Список предметов{% endblock %}
+{% block content %}
+
+<div class="container">
+    {% for item in items %}
+    <div class="block">
+        <h2>{{ item['item'] }}</h2>
+        <div class="info">
+            <p>Количество работ: 6</p>
+            <p>Полученные оценки: 6</p>
+        </div>
+        <div class="buttons">
+            <a href="#">Посмотреть мои оценки</a>
+            <a href="#">Посмотреть задания</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

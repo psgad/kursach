@@ -1,0 +1,1 @@
+sudo systemctl restart psgad.service

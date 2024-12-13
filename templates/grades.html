@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Таблица оценок{% endblock %}
+{% block page_title %}Таблица оценок группы {{ group }} по предмету {{ item }}{% endblock %}
+{% block content %}
+<style>
+    .content {
+        overflow: visible;
+    }
+
+    body {
+        user-select: none;
+    }
+
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #1e1e1e;
+        display: block;
+    }
+
+    th,
+    td {
+        border: 1px solid #444;
+        padding: 8px;
+        text-align: center;
+        text-wrap: nowrap;
+    }
+
+    th {
+        background-color: #333;
+        color: #ffffff;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        text-wrap: nowrap;
+    }
+
+    .add-column {
+        margin-top: 20px;
+    }
+
+    .highlight {
+        background-color: #444;
+    }
+
+    input.underline {
+        background-color: transparent;
+        color: #ffffff;
+        border: none;
+        border-bottom: 1px solid #555;
+        width: 20px;
+        text-align: center;
+        transition: border-bottom-color 0.3s;
+    }
+
+    input.underline:focus {
+        outline: none;
+        border-bottom-color: #ffffff;
+    }
+
+    button {
+        background-color: #555;
+        color: #ffffff;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #777;
+    }
+
+    .fio-cell {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background-color: #1e1e1e;
+        text-align: left;
+    }
+
+    .average-cell {
+        position: sticky;
+        right: 0;
+        z-index: 2;
+        background-color: #1e1e1e;
+    }
+
+    .grade-cell {
+        width: 50px;
+    }
+
+    .skip-cell {
+        width: 100px;
+    }
+
+    .final-cell {
+        width: 50px;
+    }
+
+    th#ball {
+        right: 0;
+    }
+</style>
+
+<table id="grades-table">
+    <thead>
+        <tr>
+            <th class="fio-cell">ФИО студента</th>
+            {% for i in dates %}
+            <th class="grade-cell">{{ i }}</th>
+            {% endfor %}
+            <th><button onclick="addColumn()">+</button></th>
+            <th id='ball'>Средний балл</th>
+            <th colspan='2'>Пропуски</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in users %}
+        <tr>
+            <td class="fio-cell">{{ i['surname'] }} {{ i['firstname'] }} {{ i['lastname'] }}</td>
+            {% for date in dates %}
+            {% for j in grades %}
+            {% if j['user_id'] == i['id'] and j['date'] == date %}
+            <td class="grade-cell"><input type='text' size='1' maxlength='1' class='underline'
+                    data-student-id="{{ i['id'] }}" data-date="{{ j['date'] }}" value='{{ j["grade"] }}'></td>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+            <td class="grade-cell"></td>
+            <td class="average-cell">0</td>
+            <td class="absence-cell" data-type="excused">0</td>
+            <td class="absence-cell" data-type="unexcused">0</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    function addColumn() {
+        const table = document.getElementById('grades-table');
+        const newDate = new Date().toLocaleDateString();
+
+        // Отправка POST-запроса на сервер
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(data => {
+                if (data.status === 403)
+                    alert('Дата на сегодня уже есть в таблице оценок')
+                else
+                    location.reload()
+            })
+    }
+
+    // Подсветка строки при нажатии на ячейку
+    let isScrolling = false;
+    let startY;
+    let startX;
+    let scrollTop;
+    let scrollLeft;
+
+    document.getElementById('grades-table').addEventListener('mousedown', function (event) {
+        if (event.target.tagName === 'INPUT') {
+            const row = event.target.parentNode.parentNode;
+            Array.from(row.parentNode.children).forEach(r => r.classList.remove('highlight'));
+            row.classList.add('highlight');
+        } else {
+            isScrolling = true;
+            startY = event.pageY - this.offsetTop;
+            startX = event.pageX - this.offsetLeft;
+            scrollTop = this.scrollTop;
+            scrollLeft = this.scrollLeft;
+        }
+    });
+
+    document.getElementById('grades-table').addEventListener('mousemove', function (event) {
+        if (isScrolling) {
+            event.preventDefault();
+            const y = event.pageY - this.offsetTop;
+            const x = event.pageX - this.offsetLeft;
+            const walkY = (y - startY) * 2; // Можно настроить скорость прокрутки
+            const walkX = (x - startX) * 2; // Можно настроить скорость прокрутки
+            this.scrollTop = scrollTop - walkY;
+            this.scrollLeft = scrollLeft - walkX;
+        }
+    });
+
+    document.getElementById('grades-table').addEventListener('mouseup', function () {
+        isScrolling = false;
+    });
+
+    document.getElementById('grades-table').addEventListener('mouseleave', function () {
+        isScrolling = false;
+    });
+
+    // Подсчет среднего балла
+    function calculateAverage() {
+        const rows = document.getElementById('grades-table').getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let sum = 0;
+            let count = 0;
+            for (let j = 1; j < cells.length - 4; j++) {
+                const value = cells[j].getElementsByTagName('input')[0].value;
+                if (value && !isNaN(parseFloat(value))) {
+                    sum += parseFloat(value);
+                    count++;
+                }
+            }
+            const averageCell = cells[cells.length - 3];
+            averageCell.textContent = count > 0 ? (sum / count).toFixed(2) : '0';
+        }
+    }
+
+    // Обновление пропусков
+    function updateAbsences(row) {
+        const cells = row.getElementsByTagName('td');
+        let excusedSkips = 0;
+        let unexcusedSkips = 0;
+        for (let j = 1; j < cells.length - 4; j++) {
+            const value = cells[j].getElementsByTagName('input')[0].value;
+            if (value === 'у') {
+                excusedSkips++;
+            } else if (value === 'н') {
+                unexcusedSkips++;
+            }
+        }
+        cells[cells.length - 2].textContent = excusedSkips;
+        cells[cells.length - 1].textContent = unexcusedSkips;
+    }
+
+    // Обновление среднего балла и пропусков при изменении значения в ячейке
+    document.getElementById('grades-table').addEventListener('input', function (event) {
+        if (event.target.tagName === 'INPUT') {
+            const studentId = event.target.getAttribute('data-student-id');
+            const date = event.target.getAttribute('data-date');
+            const grade = event.target.value;
+
+            // Отправка запроса на обновление оценки
+            fetch('/updateGrade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    date: date,
+                    grade: grade
+                })
+            })
+                .then(data => {
+                    if (data.status === 403) {
+                        event.target.value = ''
+                    }
+                    else {
+                        console.log('Успешно обновлено:', data);
+                        calculateAverage(); // Пересчет среднего балла после обновления
+                        updateAbsences(event.target.parentNode.parentNode); // Обновление пропусков
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при обновлении оценки:', error);
+                });
+        }
+    });
+    calculateAverage();
+    const rows = document.getElementById('grades-table').getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        updateAbsences(rows[i]);
+    }
+</script>
+{% endblock %}

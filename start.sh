@@ -1,0 +1,1 @@
+PYTHONIOENCODING=utf8 python3 main.py

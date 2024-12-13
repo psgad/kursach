@@ -1,0 +1,30 @@
+name: test 1 on kursach
+
+on:
+  push:
+    branches:
+      - kursach
+  pull_request:
+    branches:
+      - kursach
+
+
+jobs:
+  checkstyle_project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone repo
+        uses: actions/checkout@v2
+
+      - name: Set version Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.13.0'
+
+      - name: Install dependencies
+        run: |
+          source env/bin/activate
+        
+      - name: Run server
+        run: |
+          python main.py

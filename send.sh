@@ -1,0 +1,1 @@
+echo "xx3s1p1b70" | /usr/bin/mail isip_v.s.ozerov@mpt.ru

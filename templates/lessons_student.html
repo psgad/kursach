@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Расписание занятий{% endblock %}
+{% block page_title %}Расписание занятий{% endblock %}
+{% block content %}
+<main>
+    <div class="container">
+        <div class="group-select-container">
+            <input type="text" id="group-search" placeholder="Выберите группу..." oninput="filterGroups()">
+            <div id="group-list" class="group-list"></div>
+        </div>
+
+        <div class="tables-container" id="tables-container">
+            <!-- Здесь будут динамически добавляться таблицы -->
+        </div>
+    </div>
+
+    <div id="loading" class="loading">Загрузка...</div>
+</main>
+{% endblock %}

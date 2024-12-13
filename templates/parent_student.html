@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+
+{% block title %}Связка родителей со студентами{% endblock %}
+{% block page_title %}Связка родителей со студентами{% endblock %}
+{% block content %}
+<style>
+    .content {
+        overflow: visible;
+    }
+
+    body {
+        user-select: none;
+    }
+
+    .container {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        background-color: #2e2e2e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        width: 90%;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    table {
+        border-collapse: collapse;
+        background-color: #1e1e1e;
+        display: block;
+    }
+
+    th,
+    td {
+        border: 1px solid #444;
+        padding: 12px;
+        text-align: center;
+        text-wrap: nowrap;
+        color: #ffffff;
+    }
+
+    th {
+        background-color: #333;
+        color: #ffffff;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        text-wrap: nowrap;
+    }
+
+    .search-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #2e2e2e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        margin-right: 20px;
+        width: 25%;
+    }
+
+    .search-container input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: #1e1e1e;
+        color: #ffffff;
+        border: 1px solid #444;
+        border-radius: 5px;
+        font-size: 1em;
+    }
+
+    .search-container button {
+        width: 100%;
+        padding: 10px;
+        background-color: #4CAF50;
+        color: #ffffff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+
+    .search-container button:hover {
+        background-color: #45a049;
+    }
+
+    .suggestions {
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+        background-color: #1e1e1e;
+        border: 1px solid #444;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: none;
+    }
+
+    .suggestions div {
+        padding: 10px;
+        cursor: pointer;
+        color: #ffffff;
+    }
+
+    .suggestions div:hover {
+        background-color: #444;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        overflow-y: auto;
+        height: 685px;
+        width: 75%;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px;
+    }
+
+    .highlight {
+        background-color: #444;
+    }
+
+    .form-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #2e2e2e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-container label {
+        margin-top: 10px;
+        color: #ffffff;
+        font-size: 1.2em;
+    }
+
+    .form-container input,
+    .form-container select {
+        margin-top: 10px;
+        background-color: #1e1e1e;
+        color: #ffffff;
+        border: none;
+        padding: 15px;
+        border-radius: 5px;
+        width: 100%;
+        font-size: 1.1em;
+    }
+
+    .custom-select {
+        width: 100%;
+        padding: 15px;
+        background-color: #1e1e1e;
+        color: #ffffff;
+        border: 1px solid #444;
+        border-radius: 4px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        cursor: pointer;
+        font-size: 1.1em;
+        transition: border-color 0.3s;
+    }
+
+    .custom-select:focus {
+        border-color: #4CAF50;
+        outline: none;
+    }
+
+    button {
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        color: #ffffff;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+
+    button.save {
+        background-color: #0055cc;
+    }
+
+    button.delete {
+        background-color: #990000;
+    }
+
+    button:hover {
+        opacity: 0.8;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        margin: 0 5px;
+        padding: 10px 15px;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        background-color: #4CAF50;
+    }
+
+    .pagination button:disabled {
+        background-color: #555;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="container">
+    <!-- Поле для поиска родителя -->
+    <div class="search-container">
+        <input type="text" id="search-parent" placeholder="Введите ФИО родителя" oninput="showSuggestions()" />
+        <div class="suggestions" id="suggestions"></div>
+    </div>
+
+    <div class="table-container">
+        <table id="parent-students-table">
+            <thead>
+                <tr>
+                    <th>ФИО родителя</th>
+                    <th>ФИО студента</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Данные будут заполняться динамически -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="form-container">
+    <h2 style="text-align: center; color: #ffffff;">Добавить студента к родителю</h2>
+    <form id="add-student-form" action="parent_students" method="post">
+        <div class="form-group">
+            <label for="parent_id">Родитель:</label>
+            <select id="parent_id" name="parent_id" class="custom-select" required>
+                {% for parent in parents %}
+                    <option value="{{ parent.id }}">{{ parent.surname }} {{ parent.firstname }} {{ parent.lastname }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="student_id">Студент:</label>
+            <select id="student_id" name="student_id" class="custom-select" required>
+                {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.surname }} {{ student.firstname }} {{ student.lastname }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="save" type="submit">Добавить</button>
+    </form>
+</div>
+
+<script>
+    // Список родителей для подсказок
+    const parents = [
+        {% for parent in parents %}
+            {
+                id: '{{ parent.id }}',
+                surname: "{{ parent.surname }}",
+                firstname: "{{ parent.firstname }}",
+                lastname: "{{ parent.lastname }}"
+            },
+        {% endfor %}
+    ];
+
+    // Список связей родителей и студентов
+    const parentStudentsList = [
+        {% for link in parent_students_list %}
+            {
+                parent: '{{ link.parent }}',
+                children: '{{ link.children }}'
+            },
+        {% endfor %}
+    ];
+
+    // Список студентов
+    const students = [
+        {% for student in students %}
+            {
+                id: "{{ student.id }}",
+                surname: "{{ student.surname }}",
+                firstname: "{{ student.firstname }}",
+                lastname: "{{ student.lastname }}"
+            },
+        {% endfor %}
+    ];
+
+    // Функция для отображения подсказок
+    function showSuggestions() {
+        const input = document.getElementById('search-parent').value.toLowerCase();
+        const suggestionsDiv = document.getElementById('suggestions');
+        suggestionsDiv.innerHTML = '';
+
+        if (input.length === 0) {
+            suggestionsDiv.style.display = 'none';
+            showAllParents();
+            return;
+        }
+
+        const filteredParents = parents.filter(parent => {
+            const fullName = `${parent.surname} ${parent.firstname} ${parent.lastname}`.toLowerCase();
+            return fullName.includes(input);
+        });
+
+        if (filteredParents.length > 0) {
+            suggestionsDiv.style.display = 'block';
+            filteredParents.forEach(parent => {
+                const suggestion = document.createElement('div');
+                suggestion.textContent = `${parent.surname} ${parent.firstname} ${parent.lastname}`;
+                suggestion.addEventListener('click', () => {
+                    document.getElementById('search-parent').value = `${parent.surname} ${parent.firstname} ${parent.lastname}`;
+                    suggestionsDiv.style.display = 'none';
+                    showParent(parent.id);
+                });
+                suggestionsDiv.appendChild(suggestion);
+            });
+        } else {
+            suggestionsDiv.style.display = 'none';
+        }
+    }
+
+    // Функция для отображения всех родителей
+    function showAllParents() {
+        const tableBody = document.getElementById('table-body');
+        tableBody.innerHTML = '';
+
+        parents.forEach(parent => {
+            // Фильтруем студентов для текущего родителя
+            const children = parentStudentsList.filter(link => link.parent === parent.id);
+
+            // Создаем строку для родителя
+            const parentRow = document.createElement('tr');
+            parentRow.innerHTML = `<td rowspan="${children.length + 1}">${parent.surname} ${parent.firstname} ${parent.lastname}</td>`;
+            tableBody.appendChild(parentRow);
+
+            // Добавляем строки для студентов
+            children.forEach(link => {
+                const student = students.find(s => s.id === link.children);
+                if (student) {
+                    const studentRow = document.createElement('tr');
+                    studentRow.innerHTML = `
+                        <td>${student.surname} ${student.firstname} ${student.lastname}</td>
+                        <td><button class="delete" onclick="deleteLink(this)">Удалить</button></td>
+                    `;
+                    studentRow.setAttribute('data-parent-id', parent.id);
+                    studentRow.setAttribute('data-student-id', student.id);
+                    tableBody.appendChild(studentRow);
+                }
+            });
+        });
+    }
+
+    // Функция для отображения конкретного родителя
+    function showParent(parentId) {
+        const tableBody = document.getElementById('table-body');
+        tableBody.innerHTML = '';
+
+        const parent = parents.find(p => p.id === parentId);
+        if (parent) {
+            const parentRow = document.createElement('tr');
+            parentRow.innerHTML = `<td rowspan="100">${parent.surname} ${parent.firstname} ${parent.lastname}</td>`;
+            tableBody.appendChild(parentRow);
+
+            const children = parentStudentsList.filter(link => link.parent === parent.id);
+            children.forEach(link => {
+                const student = students.find(s => s.id === link.children);
+                if (student) {
+                    const studentRow = document.createElement('tr');
+                    studentRow.innerHTML = `
+                        <td>${student.surname} ${student.firstname} ${student.lastname}</td>
+                        <td><button class="delete" onclick="deleteLink(this)">Удалить</button></td>
+                    `;
+                    studentRow.setAttribute('data-parent-id', parent.id);
+                    studentRow.setAttribute('data-student-id', student.id);
+                    tableBody.appendChild(studentRow);
+                }
+            });
+        }
+    }
+
+    // Функция для удаления связи между родителем и студентом
+    function deleteLink(button) {
+        const row = button.parentNode.parentNode;
+        const parentId = row.getAttribute('data-parent-id');
+        const studentId = row.getAttribute('data-student-id');
+
+        if (confirm('Вы уверены, что хотите удалить эту связь?')) {
+            fetch(`/deleteLink/${parentId}/${studentId}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        row.remove();
+                    } else {
+                        alert('Ошибка при удалении связи');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при удалении связи:', error);
+                });
+        }
+    }
+
+    // Инициализация: показываем всех родителей при загрузке страницы
+    showAllParents();
+</script>
+{% endblock %}

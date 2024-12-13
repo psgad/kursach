@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            /* Максимальная ширина для формы */
+            margin: auto;
+        }
+
+        .reg-form h1,
+        .confirmation-form h2 {
+            margin-bottom: 20px;
+            color: #4e9fd1;
+            text-align: center;
+        }
+
+        .reg-form input,
+        .confirmation-form input,
+        .reg-form select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #3b3b3b;
+            color: #fff;
+        }
+
+        .reg-form input:focus,
+        .confirmation-form input:focus,
+        .reg-form seleect:focus {
+            outline: none;
+            border: 1px solid #4e9fd1;
+        }
+
+        .reg-form button,
+        .confirmation-form button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4e9fd1;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .reg-form button:hover,
+        .confirmation-form button:hover {
+            background-color: #3a8fc7;
+        }
+
+        .reg-form p,
+        .confirmation-form p {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .difficulty {
+            margin: 10px 0;
+            text-align: center;
+            color: #ffcc00;
+            /* Цвет для отображения сложности */
+        }
+
+        .reg-form a,
+        .confirmation-form a {
+            color: #4e9fd1;
+            text-decoration: none;
+        }
+
+        .reg-form a:hover,
+        .confirmation-form a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .reg-form h1,
+            .confirmation-form h2 {
+                font-size: 24px;
+            }
+
+            .reg-form input,
+            .confirmation-form input,
+            .reg-form button,
+            .confirmation-form button {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <form class="reg-form" id="registration-form" method="POST" action="/signup">
+            <h1>Регистрация</h1>
+            <input type="text" placeholder="Имя" name="firstname" required>
+            <input type="text" placeholder="Фамилия" name="surname" required>
+            <input type="text" placeholder="Отчество" name="lastname" required>
+            <input type="email" placeholder="Электронная почта" name="email" required
+                title="Почта формата example@mpt.ru">
+            <input type="password" placeholder="Пароль" id="password" name="password" required>
+            <input type="password" placeholder="Повторите пароль" id="confirm-password" required>
+            <div class="difficulty" id="password-strength"></div>
+            <select name="role" required>
+                <option value="" disabled selected>Выберите роль</option>
+                <option value="Студент">Студент</option>
+                <option value="Преподаватель">Преподаватель</option>
+                <option value="Родитель">Родитель</option>
+            </select>
+            <button type="submit">Зарегистрироваться</button>
+            <p>Уже есть аккаунт? <a href="{{url_for('login')}}">Войти</a></p>
+        </form>
+
+        <form class="confirmation-form" id="confirmation-form" method="POST" action="/confirm" style="display: none;">
+            <h2>Подтверждение регистрации</h2>
+            <input type="text" placeholder="Код подтверждения" name="confirmation_code" required>
+            <button type="submit">Подтвердить</button>
+            <p>Не получили код? <a href="#">Отправить повторно</a></p>
+        </form>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const passwordStrengthDiv = document.getElementById('password-strength');
+
+        // Проверка сложности пароля
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            let strength = 'Сложность пароля: ';
+            let score = 0;
+
+            if (password.length >= 8) {
+                score++;
+            }
+            if (/[A-Z]/.test(password)) {
+                score++;
+            }
+            if (/[a-z]/.test(password)) {
+                score++;
+            }
+            if (/[0-9]/.test(password)) {
+                score++;
+            }
+            if (/[^A-Za-z0-9]/.test(password)) {
+                score++;
+            }
+
+            switch (score) {
+                case 0:
+                case 1:
+                    strength += 'Простой';
+                    passwordStrengthDiv.style.color = 'red';
+                    break;
+                case 2:
+                    passwordStrengthDiv.style.color = 'orange';
+                    strength += 'Нормальный';
+                    break;
+                case 3:
+                    passwordStrengthDiv.style.color = 'yellow';
+                    strength += 'Средний';
+                    break;
+                case 4:
+                    passwordStrengthDiv.style.color = '#90EE90';
+                    strength += 'Сложный';
+                    break;
+                case 5:
+                    passwordStrengthDiv.style.color = '#ADD8E6';
+                    strength += 'Очень сложный';
+                    break;
+            }
+            passwordStrengthDiv.textContent = strength;
+        });
+
+        // Проверка совпадения паролей
+        confirmPasswordInput.addEventListener('input', () => {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.setCustomValidity('Пароли не совпадают');
+            } else {
+                confirmPasswordInput.setCustomValidity('');
+            }
+        });
+
+        // Обработка отправки формы регистрации
+        document.getElementById('registration-form').addEventListener('submit', function (e) {
+            e.preventDefault(); // Предотвращаем стандартное поведение формы
+
+            // Здесь можно добавить AJAX-запрос для отправки данных на сервер (например, с помощью fetch)
+            const formData = new FormData(this);
+            fetch('/signup', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => {
+                    if (response.ok) {
+                        // Показать форму для подтверждения
+                        this.style.display = 'none';
+                        document.getElementById('confirmation-form').style.display = 'block';
+                    } else {
+                        alert('Ошибка регистрации. Попробуйте снова.');
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
+        });
+
+        function showAlert(message, type) {
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const messages = document.querySelectorAll('.flash-message');
+            messages.forEach(message => {
+                const type = message.classList[1];
+                const text = message.textContent.trim();
+                showAlert(text, type);
+            });
+        });
+    </script>
+</body>
+
+</html>
