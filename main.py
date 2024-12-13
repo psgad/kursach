@@ -19,7 +19,6 @@ from decorators import role_required
 
 ALLOWED_GRADES = ('2', '3', '4', '5', 'н', 'у', '')
 
-bd = BD()
 lessons = None
 
 app = Flask(__name__)
@@ -352,8 +351,4 @@ def infinity_parse():
 Thread(target=infinity_parse, daemon=True).start()
 
 if __name__ == '__main__':
-    admin = bd.oneSelectBD('users', {'email': 'admin@admin.admin'})
-    if not admin:
-        bd.inputBD('users', id=str(uuid.uuid4()), role='Админ', email='admin@admin.admin', password='psgad',
-                   firstname='admin', surname='admin', lastname='admin')
     app.run(debug=True, host='0.0.0.0')
