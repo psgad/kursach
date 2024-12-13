@@ -1,5 +1,5 @@
 
-HOST = "185.139.69.25"
+HOST = "stariybog.ru"
 
 USER = 'psgadammn'
 
