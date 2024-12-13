@@ -8,7 +8,6 @@ on:
     branches:
       - kursach
 
-
 jobs:
   checkstyle_project:
     runs-on: ubuntu-latest
