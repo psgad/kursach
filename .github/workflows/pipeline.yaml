@@ -3,10 +3,10 @@ name: test 1 on kursach
 on:
   push:
     branches:
-      - kursach
+      - master
   pull_request:
     branches:
-      - kursach
+      - master
 
 jobs:
   checkstyle_project:
