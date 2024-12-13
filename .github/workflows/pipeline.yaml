@@ -24,6 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo ufw allow 5000
           pip install -r requirements.txt
 
       - name: Run application
