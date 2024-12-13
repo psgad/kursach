@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo ufw allow 5000
+          sudo ufw reload
+          sudo adduser psgad
+          sudo usermod -aG sudo psgad
           pip install -r requirements.txt
 
       - name: Run application
