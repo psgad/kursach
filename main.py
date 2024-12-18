@@ -19,6 +19,8 @@ from decorators import role_required
 
 ALLOWED_GRADES = ('2', '3', '4', '5', 'н', 'у', '')
 
+bd = BD()
+
 lessons = None
 
 app = Flask(__name__)

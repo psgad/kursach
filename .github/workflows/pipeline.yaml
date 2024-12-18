@@ -24,14 +24,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo ufw allow 5000
-          sudo ufw allow 22/tcp
-          sudo ufw allow 22/udp
-          sudo ufw reload
-          sudo adduser psgad
-          sudo usermod -aG sudo psgad
           pip install -r requirements.txt
+          pip install flake8
 
       - name: Run application
         run: |
-          python main.py
+          flake8 .

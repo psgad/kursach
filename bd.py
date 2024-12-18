@@ -16,13 +16,6 @@ class BD:
         )
         self.connect.autocommit = True
 
-    def __del__(self):
-        """
-        Закрытие соединения при удалении объекта.
-        """
-        if self.connect:
-            self.connect.close()
-
     def execute_query(self, query, params=None):
         """
         Выполняет SQL-запрос.
