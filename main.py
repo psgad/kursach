@@ -15,42 +15,27 @@ from api import *
 from commands import *
 from threading import Thread
 from decorators import role_required
-
 ALLOWED_GRADES = ('2', '3', '4', '5', 'н', 'у', '')
-
 bd = BD()
 lessons = None
-
 app = Flask(__name__)
-
 app.secret_key = 'dammn'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://psgadammn:pogoda00@localhost/kursach'
-
 db.init_app(app)
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-
 Session(app)
-
-
 def send_email(subject, body, to_email):
     session['key_confirm'] = body
     os.system(f'echo "{body}" | /usr/bin/mail -s "{subject}" {to_email}')
     print("Письмо отправлено!")
-
-
 @login_manager.user_loader
 def load_user(user_id):
     return User(bd.oneSelectBD('users', {'id': user_id}))
-
-
 def get_user():
     return bd.oneSelectBD('users', {'id':  session.get('user_id')})
-
-
 @app.route('/')
 def index():
     if not session.get('user_id'):
