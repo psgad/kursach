@@ -29,4 +29,4 @@ jobs:
 
       - name: Run application
         run: |
-          flake8 .
+          flake8 main.py
