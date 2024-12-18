@@ -376,8 +376,6 @@ def admin_users():
 
     return render_template('admin_users.html', users=users, page=page, per_page=per_page,
                            pagination=pagination, pages=list(pagination.pages), groups=[i['title'] for i in bd.selectBD('groups')], user=get_user())
-
-
 @app.route('/parent_students', methods=['GET', 'POST', 'DELETE'])
 @login_required
 @role_required(role='Админ', get_user=get_user)
