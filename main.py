@@ -2,7 +2,6 @@ from flask import Flask, redirect, url_for, session, jsonify, render_template, r
 from flask_paginate import Pagination, get_page_args
 from flask_login import LoginManager, login_user, login_required, logout_user
 import datetime
-from config import *
 import random
 import time
 import string
@@ -23,6 +22,7 @@ bd = BD()
 lessons = None
 
 app = Flask(__name__)
+
 app.secret_key = 'dammn'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://psgadammn:pogoda00@localhost/kursach'
