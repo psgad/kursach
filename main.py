@@ -20,7 +20,6 @@ from decorators import role_required
 ALLOWED_GRADES = ('2', '3', '4', '5', 'н', 'у', '')
 
 bd = BD()
-
 lessons = None
 
 app = Flask(__name__)
@@ -60,27 +59,58 @@ def index():
         session['ip'] = request.headers.get('X-Forwarded-For', 'Не указано')
     if not session.get('mac'):
         session['mac'] = get_mac_address(ip=request.remote_addr)
-
     user = get_user()
     if user:
         if user['role'] == 'Студент':
-            lessons_today = get_today_lessons(download_json(
-                lessons[user['user_group']])) if user['user_group'] else {}
-            return render_template('index.html', user=user, lessons=lessons_today)
+            lessons_today = get_today_lessons(
+                download_json(lessons[user['user_group']])
+            ) if user['user_group'] else {}
+            grades = bd.selectBD('grades', {
+                'user_id': user['id'],
+                'date': datetime.today().strftime('%Y.%m.%d')
+            })
+            users_info = {}
+            skips = 0
+            valid_skips = 0
+            grades_user = []
+            for i in bd.selectBD('grades', {'user_id': user['id']}):
+                if i['grade'] == 'н':
+                    skips += 1
+                elif i['grade'] == 'у':
+                    valid_skips += 1
+                elif i['grade'].isdigit():
+                    grades_user.append(i['grade'])
+            users_info['skips'] = skips
+            users_info['valid_skips'] = valid_skips
+            users_info['grade_average'] = sum([int(i) for i in grades_user]) / len(grades_user)
+            users_info['min_grade'] = min(grades_user)
+            users_info['max_grade'] = max(grades_user)
+            users_info['grades'] = grades_user
+            return render_template('index.html', user=user, lessons=lessons_today, grades = grades, users_info = users_info)
         elif user['role'] == 'Родитель':
-            children = [i for i in bd.selectBD(
-                'parent_students') if i['parent'] == user['id']]
+            children = bd.selectBD('parent_students',{'parent' : user['id']})
             children_lessons = []
+            children_grades = []
             for child in children:
                 child_info = bd.oneSelectBD('users', {'id': child['children']})
+                children_grades.append(bd.selectBD('grades', {
+                    'user_id' : child_info['id'],
+                    'date': datetime.today().strftime('%Y.%m.%d')
+                }))
                 if child_info:
                     lessons_today = get_today_lessons(
                         download_json(lessons[child_info['user_group']]))
                     children_lessons.append(
                         {child_info['firstname']: lessons_today if lessons_today else {}})
-            return render_template('index.html', user=user, children_lessons=children_lessons,
-                                   childrens=[list(i)[0] for i in children_lessons], count=range(len(children)))
-        elif user['role'] == 'Админ':
+
+            return render_template('index.html',
+                user=user,
+                children_lessons=children_lessons,
+                childrens=[list(i)[0] for i in children_lessons],
+                count=range(len(children)),
+                children_grades = children_grades
+            )
+        elif user['role'] == 'Админ' or user['role'] == 'Преподаватель':
             return render_template('index.html', user=user)
     return render_template('index.html', user=None)
 
@@ -203,20 +233,43 @@ def profile():
 @role_required(role='Студент', get_user=get_user)
 def student_items():
     user = get_user()
-    items = [i for i in bd.selectBD(
-        'items_groups') if user['user_group'] == i['group_title']]
-    return render_template('student_items.html', items=items, user=user)
+    items = bd.selectBD('items_groups', {
+        'group_title': user['user_group'],
+    })
+    grades_user = []
+    for i in items:
+        skips = 0
+        valid_skips = 0
+        grades = []
+        for j in bd.selectBD('grades', {'item_id' : i['item'], 'user_id' : user['id']}):
+            if j['grade'] == 'н':
+                skips += 1
+            elif j['grade'] == 'у':
+                valid_skips += 1
+            elif j['grade'].isdigit():
+                grades.append(j['grade'])
+        grades_user.append({
+            'item': i,
+            'skips' : skips,
+            'valid_skips': valid_skips,
+            'average_grade' : sum([int(i) for i in grades]) / len(grades) if len(grades) != 0 else 0,
+            'min_grade': min(grades) if len(grades) != 0 else 0,
+            'max_grade': max(grades) if len(grades) != 0 else 0,
+            'grades_count' : len(grades)
+        })
+    return render_template('student_items.html', items=items, user=user, grades_user = grades_user)
 
 
 @app.route('/teacher/grades', methods = ['GET', 'POST'])
-#@role_required('Преподаватель')
+@login_required
+@role_required(role='Преподаватель', get_user=get_user)
 def grades():
       group = request.args.get('group')
       item = request.args.get('item')
       users = [i for i in bd.selectBD('users') if i['user_group'] == group]
       users_list = [i['id'] for i in users]
       grades = [i for i in bd.selectBD('grades') if i['user_id'] in users_list]
-      dates = sorted(list(set([i['date'] for i in grades])), key=lambda x: datetime.strptime(x, "%Y-%m-%d"))
+      dates = sorted(list(set([i['date'] for i in grades])))
       for i in users:
             dates_user = [d['date'] for d in grades if d['user_id'] == i['id'] and item == d['item_id']]
             if len(dates_user) != len(dates):
@@ -225,19 +278,20 @@ def grades():
                               bd.inputBD('grades', user_id=i['id'], item_id=item,date=j, grade = '')
       grades = [i for i in bd.selectBD('grades') if i['user_id'] in users_list]
       if request.method == 'POST':
-            if datetime.datetime.today().strftime('%Y-%d-%m') in dates:
+            if datetime.today().strftime('%Y.%m.%d') in dates:
                   return '', 403
             for j in users:
-                  bd.inputBD('grades', user_id=j['id'], item_id=item,date=datetime.today().strftime('%d.%m.%Y'), grade = '')
+                  bd.inputBD('grades', user_id=j['id'], item_id=item,date=datetime.today().strftime('%Y.%m.%d'), grade = '')
                   grades = [i for i in bd.selectBD('grades') if i['user_id'] in users_list]
-                  dates = sorted(list(set([i['date'] for i in grades])), key=lambda x: datetime.strptime(x, "%Y-%m-%d"))
+                  dates = sorted(list(set([i['date'] for i in grades])))
 
             return render_template('grades.html',
                   users = users,
                   item = item,
                   user = get_user(),
                   grades = grades,
-                  dates = dates,
+                  dates_ = dates,
+                  dates = [i.strftime('%d.%m.%Y') for i in dates],
                   group = group
             ), 200
       return render_template('grades.html',
@@ -245,7 +299,8 @@ def grades():
             item = item,
             user = get_user(),
             grades = grades,
-            dates = dates,
+            dates = [i.strftime('%d.%m.%Y') for i in dates],
+            dates_ = dates,
             group = group
       )
 
@@ -297,6 +352,7 @@ def admin_users():
                 'role': role,
                 'email': email,
                 'password': password},
+
                 {'id':id}
             )
         else:
@@ -340,6 +396,114 @@ def parent_student():
 
     return render_template('parent_student.html', parents=parents, students=students, parent_students_list=parent_students_list, user=get_user())
 
+@app.route('/teacher_groups')
+@login_required
+@role_required(role='Преподаватель', get_user=get_user)
+def teacher_groups():
+    user = get_user()
+    item = bd.oneSelectBD('teacher_item', {'user_id': user['id']})['item_id']
+    print(item)
+    groups_from_item = [i['group_title'] for i in bd.selectBD('items_groups', {'item': item})]
+    groups_info = []
+
+    for group_title in groups_from_item:
+        users = bd.selectBD('users', {'user_group': group_title})
+        skips = 0
+        valid_skips = 0
+        grades = []
+
+        for user in users:
+            grades_list = bd.selectBD('grades', {'user_id': user['id']})
+            for grade in grades_list:
+                if grade['grade'].isdigit():
+                    grades.append(int(grade['grade']))
+                elif grade['grade'] == 'у':
+                    valid_skips += 1
+                elif grade['grade'] == 'н':
+                    skips += 1
+
+        average_grade = sum(grades) / len(grades) if grades else 0
+        max_grade = max(grades) if grades else 0
+        min_grade = min(grades) if grades else 0
+
+        groups_info.append({
+            'group': group_title,
+            'users_count': len(users),
+            'skips': skips,
+            'valid_skips': valid_skips,
+            'average_grade': average_grade,
+            'max_grade': max_grade,
+            'min_grade': min_grade,
+            'grades': grades,
+        })
+
+    return render_template('teacher_groups.html', user=user, groups_info=groups_info, item=item)
+
+
+@app.route('/parent/lessons_check')
+@login_required
+@role_required(role='Родитель', get_user=get_user)
+def parent_lessons_check():
+    user = get_user()
+    children= [i['children'] for i in bd.selectBD('parent_students', {'parent': user['id']})]
+    students = [i for i in bd.selectBD('users') if i['id'] in children]
+    less = {}
+    for i in students:
+        less[i['id']] = download_json(lessons[i['user_group']])
+    return render_template('parent_lessons_check.html',
+        students = students,
+        user = user,
+        lessons = less
+    )
+
+
+@app.route('/parent/grades_check')
+@login_required
+@role_required(role='Родитель', get_user=get_user)
+def parent_grades_check():
+    user = get_user()
+    children = [i['children'] for i in bd.selectBD('parent_students', {'parent': user['id']})]
+    users = [i for i in bd.selectBD('users') if i['id'] in children]
+    students = []
+    for i in users:
+        name = i['surname'] + " " + i['firstname'] + " " + i['lastname']
+        id = i['id']
+        grades = []
+        skips = 0
+        valid_skips = 0
+        grades_ = []
+        item = ''
+        items = list(set([d['item_id'] for d in bd.selectBD('grades', {'user_id': i['id']})]))
+        print(name)
+        for index, value in enumerate(items):
+            item = value
+            print(item)
+            student_grades = bd.selectBD('grades', {'item_id': value, 'user_id': i['id']})
+            for ind, j in enumerate(student_grades):
+                if j['grade'] == 'н':
+                    skips += 1
+                elif j['grade'] == 'у':
+                    valid_skips +=1
+                elif j['grade'].isdigit():
+                    grades_.append(j['grade'])
+                if ind == len(student_grades) - 1:
+                    grades.append({
+                        'item':item,
+                        'skips': skips,
+                        'valid_skips' : valid_skips,
+                        'average_grade': sum([int(d) for d in grades_]) / len(grades_) if len(grades_) != 0 else 0,
+                        'max_grade': max(grades_) if len(grades_) != 0 else 0,
+                        'min_grade': min(grades_) if len(grades_) != 0 else 0,
+                        'grades_count': len(grades_)
+                    })
+            if index == len(items) - 1:
+                students.append({
+                    'name': name,
+                    'id':id,
+                    'grades':grades
+                })
+    return render_template('parent_grades_check.html', user = user, students = students)
+
 
 def infinity_parse():
     global lessons
@@ -353,4 +517,8 @@ def infinity_parse():
 Thread(target=infinity_parse, daemon=True).start()
 
 if __name__ == '__main__':
+    admin = bd.oneSelectBD('users', {'email': 'admin@admin.admin'})
+    if not admin:
+        bd.inputBD('users', id=str(uuid.uuid4()), role='Админ', email='admin@admin.admin', password='psgad',
+                   firstname='admin', surname='admin', lastname='admin')
     app.run(debug=True, host='0.0.0.0')
